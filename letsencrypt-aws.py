@@ -54,7 +54,7 @@ def _get_iam_certificate(iam_client, certificate_id):
                     ServerCertificateName=cert_name,
                 )
                 return x509.load_pem_x509_certificate(
-                    response["ServerCertificate"]["CertificateBody"],
+                    response["ServerCertificate"]["CertificateBody"].encode('utf8'),
                     default_backend(),
                 )
 
@@ -113,9 +113,9 @@ class ELBCertificate(object):
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
                 encryption_algorithm=serialization.NoEncryption(),
-            ),
-            CertificateBody=pem_certificate,
-            CertificateChain=pem_certificate_chain,
+            ).decode('utf8'),
+            CertificateBody=pem_certificate.decode('utf8'),
+            CertificateChain=pem_certificate_chain.decode('utf8'),
         )
         new_cert_arn = response["ServerCertificateMetadata"]["Arn"]
 
@@ -331,7 +331,7 @@ def request_certificate(logger, acme_client, elb_name, authorizations, csr):
     pem_certificate = OpenSSL.crypto.dump_certificate(
         OpenSSL.crypto.FILETYPE_PEM, cert_response.body
     )
-    pem_certificate_chain = "\n".join(
+    pem_certificate_chain = b"\n".join(
         OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
         for cert in acme_client.fetch_chain(cert_response)
     )
